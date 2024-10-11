@@ -1,0 +1,132 @@
+SetCustomers
+customer_id	customer_name	city	state
+1	John Doe	New York	NY
+2	Jane Smith	Los Angeles	CA
+3	Bob Johnson	Chicago	IL
+4	Alice White	Miami	FL
+5	Maria Perez	New York	NY
+
+Setorders
+order_id	customer_id	order_date	total_amount
+101	1	2024-01-15	150.00
+102	3	2024-02-20	230.00
+103	5	2024-03-15	300.00
+104	2	2024-01-10	125.00
+105	4	2024-03-12	450.00
+
+SetReturns
+return_id	customer_id	return_date	return_amount
+201	1	2024-01-20	50.00
+202	4	2024-03-18	150.00
+
+Select * From SetCustomers;
+Select * From Setorders;
+Select * From SetReturns;
+
+
+1) Retrieve all customers who have either placed an order or returned an item.
+Select Customer_id From Setorders
+UNION
+SELECT CUSTOMER_ID FROM SetReturns;
+
+2) Retrieve the names of all customers who have either placed an order or live in New York.
+
+Select 
+	customer_id,
+	Customer_name 
+From 
+	SETCUSTOMERS
+Where 
+	customer_id IN
+(
+Select 
+  Customer_id 
+FROM 
+  Setorders
+UNION
+SELECT 
+  CUSTOMER_ID 
+FROM 
+  SETCUSTOMERS
+Where CITY='New York'
+)
+
+3) Find customers who have both placed an order and returned an item.
+
+Select
+	Customer_id
+From 
+	Setorders
+Intersect
+Select
+	Customer_ID
+From 
+	SetReturns
+
+
+4) Find all customers who placed an order but have not returned any items.
+
+Select
+	Customer_ID
+From 
+	SETORDERS
+EXCEPT
+SELECT
+	CUSTOMER_ID
+FROM 
+	SetReturns
+
+
+5) Find customers who live in New York but have not placed an order.
+
+Select 
+	CUSTOMER_ID
+FROM 
+	SetCustomers
+where city= 'NEW YORK'
+EXCEPT
+SELECT 
+	CUSTOMER_ID
+FROM 
+	SETORDERS
+
+
+6) Find all customers who placed an order but live outside New York, excluding those who returned an item.
+
+SELECT
+	CUSTOMER_ID
+FROM 
+	SETCUSTOMERS
+WHERE 
+	CITY<> 'NEW YORK'
+INTERSECT
+Select
+	Customer_id
+From 
+	SetOrders
+EXCEPT
+SELECT
+	CUSTOMER_ID
+From 
+	SETRETURNS
+
+
+7) Find customers who placed an order or returned an item, but exclude those who placed an order in January 2024.
+
+(Select 
+	Customer_id
+From 
+	SETORDERS
+UNION
+SELECT 
+	CUSTOMER_ID
+FROM 
+	SETRETURNS)
+EXCEPT
+SELECT
+	CUSTOMER_ID
+FROM 
+	SETORDERS
+WHERE MONTH(ORDER_DATE)=1
+
+

@@ -1,0 +1,125 @@
+1) Retrieve the total number of orders placed.
+
+Select 
+	count(order_id) As Numberoforders
+From orders
+
+2) Calculate the total revenue generated from pizza sales.
+
+Select
+Round(SUM(od.quantity*pz.price),2) As Totalrevenue
+From Order_details As od
+Inner Join Pizzas as pz
+ON od.pizza_id=pz.pizza_id
+
+3) Identify the highest-priced pizza.
+
+Select pizza_id, price as highestpriced From pizzas
+Where price=(
+Select MAX(price)
+From pizzas)
+
+4) Identify the most common pizza size ordered.
+
+Select Top 1
+p.size, Sum(od.quantity) as totalquantity
+from pizzas p
+inner join order_details od
+On od.pizza_id=p.pizza_id
+Group By p.size
+Order By Sum(od.quantity) desc
+
+5) List the top 5 most ordered pizza types along with their quantities.
+Select TOP 5
+p.pizza_type_id, Sum(quantity) as totalquantity
+From Pizzas p
+inner join order_details od
+ON Od.pizza_id=p.pizza_id
+Group By p.pizza_type_id
+ORDER BY Sum(quantity) DESC
+
+6) Join the necessary tables to find the total quantity of each pizza category ordered.
+
+Select p.pizza_type_id, sum(od.quantity) as totalquantity
+From order_details od
+Inner Join pizzas p
+On p.pizza_id=od.pizza_id
+
+7) Determine the distribution of orders by hour of the day.
+
+SELECT DATEPART(HOUR, time) AS Hour, COUNT(order_id) AS Order_count
+FROM orders
+GROUP BY DATEPART(HOUR, time)
+ORDER BY hour;
+
+
+8) Group the orders by date and calculate the average number of pizzas ordered per day.
+
+WITH CTE AS
+(
+Select DATEPART(day, date) As date,
+Count(order_id) As countoforders
+From orders
+Group By DATEPART(day, date) 
+)
+Select Sum(countoforders)/count(date) As Numberoforderperday
+From CTE;
+
+9) Determine the top 3 most ordered pizza types based on revenue.
+
+Select TOP 3 pt.name as pizzatypes, SUM(od.quantity*p.price) As rev
+From order_details od
+Inner Join pizzas p
+On p.pizza_id=od.pizza_id
+Inner Join pizza_types pt
+On p.pizza_type_id=pt.pizza_type_id
+Group By pt.name
+Order By SUM(od.quantity*p.price) desc
+
+10) Calculate the percentage contribution of each pizza type to total revenue.
+
+Select p.pizza_type_id, sum(p.price*od.quantity) As pizzatypewiserev,
+Sum(sum(p.price*od.quantity)) Over() As totalrevenue,
+Round((sum(p.price*od.quantity)*100.0)/(Sum(sum(p.price*od.quantity)) Over()),2) As percentagesale
+From pizzas p
+Inner Join order_details od
+on od.pizza_id=p.pizza_id
+Group By p.pizza_type_id
+
+11) Analyze the cumulative revenue generated over time.
+
+Select  o.date, Round(Sum(od.quantity*p.price),2) as totalprice,
+Round(Sum(Sum(od.quantity*p.price)) Over(Order by o.date),2) As cumuprice
+From order_details od
+Inner Join orders o
+On o.order_id=od.order_id
+Inner Join pizzas p
+on p.pizza_id=od.pizza_id
+Group By o.date
+
+12) Determine the top 3 most ordered pizza types based on revenue for each pizza category.
+
+WITH CTE AS
+(
+Select pt.pizza_type_id, Sum(p.price*od.quantity) As sales
+From pizzas p
+Inner Join order_details od
+ON p.pizza_id=od.pizza_id
+Inner Join pizza_types pt
+on p.pizza_type_id= pt.pizza_type_id
+Group By pt.pizza_type_id
+), cat As
+(
+Select CTE.Pizza_type_id,CTE.SALES, pts.category
+From CTE
+Inner Join pizza_types pts
+On CTE.pizza_type_id=pts.pizza_type_id
+), RNKING As
+(
+Select *,
+DENSE_RANK() Over(Partition By Category Order By Sales desc) As RNK
+From Cat
+)
+Select Pizza_type_id, sales, category
+From RNKING
+Where RNK<=3
